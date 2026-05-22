@@ -1,7 +1,4 @@
 {
   "version": 2,
-  "framework": "nextjs",
-  "env": {
-    "NEXTAUTH_URL": "@nextauth_url"
-  }
+  "framework": "nextjs"
 }

@@ -1,17 +1,19 @@
 'use client';
 import { useSession } from 'next-auth/react';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import 'regenerator-runtime/runtime';
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import LoginPage from '@/components/LoginPage';
 import Sidebar from '@/components/Sidebar';
 import ChatMessages from '@/components/ChatMessages';
 
 const SUGGESTIONS = [
-  { icon: '📄', label: 'Explain datasheet', prompt: 'Explain this datasheet in simple terms' },
-  { icon: '📌', label: 'List all pins', prompt: 'List all pins and their functions' },
-  { icon: '⚡', label: 'Key specs', prompt: 'What are the key electrical specifications?' },
-  { icon: '🔌', label: 'Arduino wiring', prompt: 'How do I connect this to an Arduino?' },
-  { icon: '🔍', label: 'Alternatives', prompt: 'What are alternative components to this one?' },
-  { icon: '</>', label: 'Applications', prompt: 'What are typical applications for this component?' },
+  { icon: '📄', label: 'Explain datasheet', subtitle: 'Get clear explanations', prompt: 'Explain this datasheet in simple terms' },
+  { icon: '📌', label: 'List all pins', subtitle: 'Pin functions & details', prompt: 'List all pins and their functions' },
+  { icon: '⚡', label: 'Key specs', subtitle: 'Important specifications', prompt: 'What are the key electrical specifications?' },
+  { icon: '🔌', label: 'Arduino wiring', subtitle: 'Connections guide', prompt: 'How do I connect this to an Arduino?' },
+  { icon: '🔍', label: 'Alternatives', subtitle: 'Find similar components', prompt: 'What are alternative components to this one?' },
+  { icon: '</>', label: 'Applications', subtitle: 'Use cases & ideas', prompt: 'What are typical applications for this component?' },
 ];
 
 // Accepted file types
@@ -39,9 +41,30 @@ export default function Home() {
   const [convId, setConvId] = useState(() => genId());
   const [activeConv, setActiveConv] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [theme, setTheme] = useState('light');
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+  const [baseInput, setBaseInput] = useState('');
 
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+
+  const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
+
+  useEffect(() => {
+    if (listening) {
+      setInput(baseInput + (baseInput && transcript ? ' ' : '') + transcript);
+    }
+  }, [transcript, listening, baseInput]);
+
+  const toggleListening = () => {
+    if (listening) {
+      SpeechRecognition.stopListening();
+    } else {
+      setBaseInput(input);
+      resetTranscript();
+      SpeechRecognition.startListening({ continuous: true });
+    }
+  };
 
   // ── Upload & extract file ──────────────────────────────────────────
   const processFile = async (file) => {
@@ -76,12 +99,23 @@ export default function Home() {
 
   // ── Send message ───────────────────────────────────────────────────
   const sendMessage = useCallback(async (text) => {
+    SpeechRecognition.stopListening();
     const msg = (text || input).trim();
     if (!msg) return;
     setInput('');
+    setBaseInput('');
     if (textareaRef.current) { textareaRef.current.style.height = 'auto'; }
 
-    const newMessages = [...messages, { role: 'user', content: msg }];
+    // Check if the current uploaded file hasn't been attached to a message in this conversation yet
+    const isFileAttachedNow = uploadedFile && !messages.some(m => m.file === uploadedFile.name);
+
+    const newMsg = { 
+      role: 'user', 
+      content: msg,
+      ...(isFileAttachedNow && { file: uploadedFile.name })
+    };
+
+    const newMessages = [...messages, newMsg];
     setMessages(newMessages);
     setIsTyping(true);
 
@@ -91,10 +125,12 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: msg,
-          history: messages,
+          history: messages, // Send history before this new message
           datasheetText: uploadedFile?.text || '',
           conversationId: convId,
           datasheetName: uploadedFile?.name || 'No file',
+          attachedFile: isFileAttachedNow ? uploadedFile.name : null,
+          useWebSearch: webSearchEnabled
         }),
       });
       const data = await r.json();
@@ -138,18 +174,32 @@ export default function Home() {
   if (!session) return <LoginPage />;
 
   return (
-    <div className="app-shell">
-      <Sidebar session={session} activeConvId={convId} onSelectConv={selectConv} onNewChat={newChat} />
+    <div className={`app-shell ${theme}`}>
+      <Sidebar 
+        session={session} 
+        activeConvId={convId} 
+        onSelectConv={selectConv} 
+        onNewChat={newChat} 
+        webSearchEnabled={webSearchEnabled}
+        onToggleWebSearch={setWebSearchEnabled}
+      />
 
       <div className="main-content">
-        {/* Topbar — no tabs */}
+        {/* Topbar */}
         <div className="topbar">
-          <span className="topbar-title">
+          <span className="topbar-title" style={{ fontFamily: 'Lora, Georgia, serif' }}>
             {uploadedFile
               ? <>{getFileIcon(uploadedFile.name)} {uploadedFile.name}</>
-              : 'AI Datasheet Explainer'}
+              : <>AI Datasheet Explainer</>}
           </span>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>LLaMA 3.3 · Groq</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '20px' }}>
+              <span style={{ color: '#4caf50', fontSize: '0.6rem' }}>●</span> LLaMA 3.3 · Groq
+            </span>
+            <button className="icon-btn" style={{ border: '1px solid var(--border)', background: 'transparent' }} title="Toggle Theme" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            </button>
+          </div>
         </div>
 
         {/* Chat area */}
@@ -161,28 +211,22 @@ export default function Home() {
         >
           {messages.length === 0 ? (
             <div className="landing">
-              <div className="landing-icon">⚡</div>
+              <div className="landing-icon">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="gradS" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#f9b16e" />
+                      <stop offset="100%" stopColor="#e65c53" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M50 10 L85 30 L85 45 L50 25 L30 37 L30 63 L50 75 L85 55 L85 70 L50 90 L15 70 L15 30 Z" fill="url(#gradS)" />
+                </svg>
+              </div>
               <div>
                 <div className="landing-title">AI Datasheet Explainer</div>
-                <div className="landing-subtitle" style={{ marginTop: 8 }}>
-                  Upload any file — PDF, DOCX, image, or text — and ask anything about it.
+                <div className="landing-subtitle" style={{ marginTop: 12 }}>
+                  Upload any file — PDF, DOCX, image, or text —<br/>and ask anything about it.
                 </div>
-              </div>
-
-              {/* File type badges */}
-              <div className="file-type-badges">
-                {['PDF', 'DOCX', 'JPG/PNG', 'TXT', 'CSV'].map((t) => (
-                  <span key={t} className="file-badge">{t}</span>
-                ))}
-              </div>
-
-              <div className="suggestion-chips">
-                {SUGGESTIONS.map((s) => (
-                  <button key={s.label} className="chip" onClick={() => sendMessage(s.prompt)}>
-                    <span className="chip-icon">{s.icon}</span>
-                    {s.label}
-                  </button>
-                ))}
               </div>
 
               {dragOver && (
@@ -257,13 +301,34 @@ export default function Home() {
                 </span>
               </div>
               <div className="input-right">
+                {browserSupportsSpeechRecognition && (
+                  <button
+                    className={`icon-btn mic-btn ${listening ? 'listening' : ''}`}
+                    onClick={toggleListening}
+                    title={listening ? "Stop listening" : "Start voice input"}
+                    style={{ 
+                      color: listening ? '#e65c53' : 'var(--text-muted)',
+                      border: listening ? '1px solid #e65c53' : 'none',
+                      background: listening ? 'rgba(230, 92, 83, 0.1)' : 'transparent',
+                      marginRight: '8px'
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                      <line x1="12" y1="19" x2="12" y2="23"></line>
+                      <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                  </button>
+                )}
                 <button
                   className="send-btn"
                   onClick={() => sendMessage()}
                   disabled={!input.trim() || isTyping || uploadedFile?.uploading}
+                  title="Send message"
                 >
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
               </div>
