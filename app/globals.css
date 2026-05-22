@@ -478,3 +478,211 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg-main);
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+/* ═══════════════════════════════════════════
+   Mobile & Responsive Layout Enhancements
+   ═══════════════════════════════════════════ */
+
+/* Desktop defaults */
+.sidebar-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.sidebar-toggle:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-mobile-close {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+.sidebar-mobile-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e65c53;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+  /* Shell Adjustments */
+  .app-shell {
+    position: relative;
+  }
+
+  /* Sidebar Drawer styling */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    width: 280px;
+    min-width: 280px;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.25);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Show toggle and mobile close buttons */
+  .sidebar-toggle {
+    display: flex;
+  }
+  .sidebar-mobile-close {
+    display: flex;
+  }
+  .sidebar-shortcut-hint {
+    display: none !important;
+  }
+
+  /* Blur/Translucent Backdrop */
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 999;
+    animation: fadeIn 0.2s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Topbar Padding and Layout */
+  .topbar {
+    padding: 10px 16px;
+    min-height: 52px;
+  }
+  .topbar-title {
+    font-size: 0.95rem;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topbar-model-badge {
+    padding: 4px 10px !important;
+    font-size: 0.72rem !important;
+  }
+
+  /* Message Spacing & Bubbles */
+  .messages-container {
+    padding: 16px 12px;
+    gap: 16px;
+  }
+  .msg-bubble {
+    max-width: 88%;
+    font-size: 0.9rem;
+  }
+  .msg-row {
+    gap: 10px;
+  }
+  .msg-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 0.9rem;
+  }
+
+  /* Landing Page Elements */
+  .landing {
+    padding: 1.5rem 1rem;
+    gap: 16px;
+  }
+  .landing-title {
+    font-size: 1.8rem;
+  }
+  .landing-subtitle {
+    font-size: 0.85rem;
+    max-width: 100%;
+  }
+
+  /* Compact Input Bar for Mobile */
+  .input-area {
+    padding: 8px 8px 12px;
+  }
+  .input-box {
+    border-radius: 12px;
+  }
+  .input-textarea {
+    font-size: 0.95rem;
+    padding: 12px 14px 4px;
+    min-height: 48px;
+  }
+  .input-toolbar {
+    padding: 6px 10px 8px;
+  }
+  
+  /* Hide text labels and file type hints on mobile toolbars */
+  .input-left span {
+    display: none !important;
+  }
+  .icon-btn-label {
+    display: none !important;
+  }
+  .upload-icon-btn {
+    padding: 6px !important;
+    border-radius: 50% !important;
+    background: var(--bg-hover) !important;
+  }
+
+  /* Mobile Login Page Integration */
+  .login-container {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  .login-left {
+    display: none !important; /* Hide full decorative layout to focus directly on login forms on small screens */
+  }
+  .login-right {
+    width: 100%;
+    padding: 24px 16px;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-card {
+    padding: 30px 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+    margin: 0 auto;
+  }
+  .card-header h2 {
+    font-size: 1.3rem;
+  }
+}
+
+/* Extra small devices styling */
+@media (max-width: 480px) {
+  .topbar-model-badge {
+    display: none !important; /* Hide to avoid clipping with long file names on very narrow viewports */
+  }
+  .topbar-title {
+    max-width: 150px;
+  }
+}
+

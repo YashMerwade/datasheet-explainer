@@ -44,6 +44,7 @@ export default function Home() {
   const [theme, setTheme] = useState('light');
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [baseInput, setBaseInput] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -154,12 +155,14 @@ export default function Home() {
     setActiveConv(null);
     setInput('');
     if (fileInputRef.current) fileInputRef.current.value = '';
+    setSidebarOpen(false);
   };
 
   const selectConv = (conv) => {
     setActiveConv(conv);
     setMessages(conv.messages || []);
     setConvId(conv.id);
+    setSidebarOpen(false);
   };
 
   // ── Loading screen ─────────────────────────────────────────────────
@@ -182,18 +185,31 @@ export default function Home() {
         onNewChat={newChat} 
         webSearchEnabled={webSearchEnabled}
         onToggleWebSearch={setWebSearchEnabled}
+        isOpen={sidebarOpen}
+        setIsOpen={setSidebarOpen}
       />
+
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
       <div className="main-content">
         {/* Topbar */}
         <div className="topbar">
-          <span className="topbar-title" style={{ fontFamily: 'Lora, Georgia, serif' }}>
-            {uploadedFile
-              ? <>{getFileIcon(uploadedFile.name)} {uploadedFile.name}</>
-              : <>AI Datasheet Explainer</>}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button className="sidebar-toggle" onClick={() => setSidebarOpen(true)} title="Open Sidebar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </button>
+            <span className="topbar-title" style={{ fontFamily: 'Lora, Georgia, serif' }}>
+              {uploadedFile
+                ? <>{getFileIcon(uploadedFile.name)} {uploadedFile.name}</>
+                : <>AI Datasheet Explainer</>}
+            </span>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '20px' }}>
+            <span className="topbar-model-badge" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '20px' }}>
               <span style={{ color: '#4caf50', fontSize: '0.6rem' }}>●</span> LLaMA 3.3 · Groq
             </span>
             <button className="icon-btn" style={{ border: '1px solid var(--border)', background: 'transparent' }} title="Toggle Theme" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}>

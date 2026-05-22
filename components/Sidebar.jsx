@@ -2,7 +2,7 @@
 import { signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 
-export default function Sidebar({ session, activeConvId, onSelectConv, onNewChat, webSearchEnabled, onToggleWebSearch }) {
+export default function Sidebar({ session, activeConvId, onSelectConv, onNewChat, webSearchEnabled, onToggleWebSearch, isOpen, setIsOpen }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,23 +31,28 @@ export default function Sidebar({ session, activeConvId, onSelectConv, onNewChat
   const initials = user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
   return (
-    <div className="sidebar">
+    <div className={`sidebar ${isOpen ? 'open' : ''}`}>
       {/* Header */}
-      <div className="sidebar-header" style={{ marginBottom: '12px' }}>
-        <div className="sidebar-logo-icon" style={{ display: 'flex', width: 26, height: 26 }}>
-          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="gradS" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#f9b16e" />
-                <stop offset="100%" stopColor="#e65c53" />
-              </linearGradient>
-            </defs>
-            <path d="M50 10 L85 30 L85 45 L50 25 L30 37 L30 63 L50 75 L85 55 L85 70 L50 90 L15 70 L15 30 Z" fill="url(#gradS)" />
-          </svg>
+      <div className="sidebar-header" style={{ marginBottom: '12px', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="sidebar-logo-icon" style={{ display: 'flex', width: 26, height: 26 }}>
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="gradS" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#f9b16e" />
+                  <stop offset="100%" stopColor="#e65c53" />
+                </linearGradient>
+              </defs>
+              <path d="M50 10 L85 30 L85 45 L50 25 L30 37 L30 63 L50 75 L85 55 L85 70 L50 90 L15 70 L15 30 Z" fill="url(#gradS)" />
+            </svg>
+          </div>
+          <div>
+            <div className="sidebar-logo-text" style={{ fontSize: '1.1rem', fontFamily: 'Lora, Georgia, serif', fontWeight: 600 }}>Datasheet AI</div>
+          </div>
         </div>
-        <div>
-          <div className="sidebar-logo-text" style={{ fontSize: '1.1rem', fontFamily: 'Lora, Georgia, serif', fontWeight: 600 }}>Datasheet AI</div>
-        </div>
+        <button className="sidebar-mobile-close" onClick={() => setIsOpen(false)} title="Close Sidebar">
+          ✕
+        </button>
       </div>
 
       {/* New Chat */}
@@ -58,7 +63,7 @@ export default function Sidebar({ session, activeConvId, onSelectConv, onNewChat
           </svg>
           <span style={{ fontWeight: 500 }}>New chat</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', border: '1px solid var(--border)', padding: '2px 6px', borderRadius: '4px' }}>
+        <div className="sidebar-shortcut-hint" style={{ display: 'flex', alignItems: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', border: '1px solid var(--border)', padding: '2px 6px', borderRadius: '4px' }}>
           ⌘ K
         </div>
       </button>
