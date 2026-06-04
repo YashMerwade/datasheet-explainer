@@ -70,7 +70,7 @@ export default function Home() {
   // ── Upload & extract file ──────────────────────────────────────────
   const processFile = async (file) => {
     if (!file) return;
-    setUploadedFile({ file, name: file.name, text: null, uploading: true });
+    setUploadedFile({ file, name: file.name, text: null, uploading: true, error: null });
 
     const fd = new FormData();
     fd.append('file', file);
@@ -79,9 +79,13 @@ export default function Home() {
     try {
       const r = await fetch('/api/explain', { method: 'POST', body: fd });
       const data = await r.json();
-      setUploadedFile({ file, name: file.name, text: data.text || data.result || '', uploading: false });
+      if (!r.ok || data.error) {
+        setUploadedFile({ file, name: file.name, text: '', uploading: false, error: data.error || 'Failed to extract text.' });
+      } else {
+        setUploadedFile({ file, name: file.name, text: data.text || data.result || '', uploading: false, error: null });
+      }
     } catch {
-      setUploadedFile((prev) => ({ ...prev, uploading: false, text: '' }));
+      setUploadedFile({ file, name: file.name, text: '', uploading: false, error: 'Network error uploading file.' });
     }
   };
 
@@ -268,7 +272,10 @@ export default function Home() {
                     <span className="spinner" style={{ width: 10, height: 10, borderWidth: 1.5 }} /> extracting…
                   </span>
                 )}
-                {!uploadedFile.uploading && uploadedFile.text !== null && (
+                {!uploadedFile.uploading && uploadedFile.error && (
+                  <span style={{ color: '#e65c53', marginLeft: 6, fontSize: '0.72rem' }}>✗ {uploadedFile.error}</span>
+                )}
+                {!uploadedFile.uploading && !uploadedFile.error && uploadedFile.text !== null && (
                   <span style={{ color: '#4caf77', marginLeft: 6, fontSize: '0.72rem' }}>✓ ready</span>
                 )}
                 <button
