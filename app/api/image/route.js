@@ -20,6 +20,11 @@ export async function GET(request) {
     const blob = await hf.textToImage({
       inputs: prompt,
       model: 'black-forest-labs/FLUX.1-schnell',
+      parameters: {
+        width: 768,
+        height: 768,
+        num_inference_steps: 4,
+      },
     });
 
     const imageBuffer = await blob.arrayBuffer();
@@ -27,7 +32,7 @@ export async function GET(request) {
     return new NextResponse(imageBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'image/jpeg', // HF often returns jpeg or png, we can just use image/jpeg or image/png
+        'Content-Type': 'image/jpeg',
         'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });

@@ -923,3 +923,216 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg-main);
     border-radius: 12px;
   }
 }
+
+/* ═══════════════════════════════════════════
+   Generated Image Card — Compact & Premium
+═══════════════════════════════════════════ */
+
+.genimg-card {
+  position: relative;
+  margin: 16px 0;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+  max-width: 360px;
+  transition: box-shadow 0.3s ease;
+}
+.genimg-card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.genimg-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-main);
+}
+.genimg-card-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.genimg-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.genimg-canvas {
+  position: relative;
+  background: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+}
+.genimg-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: zoom-in;
+  transition: opacity 0.3s ease;
+}
+.genimg-img:hover {
+  opacity: 0.92;
+}
+
+.genimg-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  gap: 12px;
+  width: 100%;
+}
+.genimg-loading p {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.genimg-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.genimg-footer {
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-style: italic;
+  line-height: 1.4;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg-main);
+}
+.genimg-prompt-label {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Error card */
+.genimg-error-card {
+  margin: 16px 0;
+  padding: 14px;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  max-width: 360px;
+}
+.genimg-error-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: #ef4444;
+}
+
+/* Fullscreen overlay */
+.genimg-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(8px);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+  animation: fadeIn 0.2s ease;
+}
+.genimg-overlay-toolbar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(rgba(0,0,0,0.5), transparent);
+  color: #fff;
+  cursor: default;
+}
+.genimg-overlay-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.genimg-overlay-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+.genimg-overlay-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.genimg-overlay-close:hover {
+  background: rgba(255,255,255,0.25);
+}
+.genimg-overlay-img {
+  max-width: 85vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+}
+
+/* Dark mode */
+.app-shell.dark .genimg-card {
+  border-color: rgba(255,255,255,0.06);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.app-shell.dark .genimg-card-header {
+  background: rgba(30,30,30,0.8);
+}
+.app-shell.dark .genimg-footer {
+  background: rgba(30,30,30,0.8);
+}
+.app-shell.dark .genimg-error-card {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .genimg-card {
+    max-width: 300px;
+  }
+}
+@media (max-width: 480px) {
+  .genimg-card {
+    max-width: 260px;
+  }
+}

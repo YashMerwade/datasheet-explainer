@@ -6,21 +6,17 @@ export default function GeneratedImage({ prompt }) {
   const [error, setError] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   
-  // Clean up the prompt
   const cleanPrompt = prompt ? prompt.trim() : 'Electronics engineering diagram';
-  
-  // Route through our Next.js backend proxy to bypass AdBlockers, tracking prevention, and CORS issues
   const encodedPrompt = encodeURIComponent(cleanPrompt);
   const imageUrl = `/api/image?prompt=${encodedPrompt}`;
 
-  // Add a timeout just in case the server is completely unresponsive
   React.useEffect(() => {
     const timer = setTimeout(() => {
       if (loading) {
         setError(true);
         setLoading(false);
       }
-    }, 45000); // 45 second timeout for heavy image generation
+    }, 60000);
     return () => clearTimeout(timer);
   }, [loading]);
 
@@ -34,7 +30,7 @@ export default function GeneratedImage({ prompt }) {
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = `generated-image-${Math.floor(Math.random() * 10000)}.jpg`;
+      a.download = `generated-${Date.now()}.jpg`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -45,116 +41,98 @@ export default function GeneratedImage({ prompt }) {
     }
   };
 
+  if (error) {
+    return (
+      <div className="genimg-error-card">
+        <div className="genimg-error-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <span>Image Generation Failed</span>
+        </div>
+        <p style={{ margin: '6px 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          Hugging Face API may be overloaded. Please try again.
+        </p>
+        <p style={{ margin: '4px 0 0', fontSize: '0.7rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+          Prompt: {cleanPrompt.slice(0, 100)}...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
-      <div style={{ margin: '20px 0', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', position: 'relative', background: 'var(--bg-surface)' }}>
-        {loading && !error && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '300px', width: '100%' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div className="spinner" style={{ border: '4px solid rgba(0,0,0,0.1)', width: '36px', height: '36px', borderRadius: '50%', borderLeftColor: 'var(--primary)', animation: 'spin 1s linear infinite', margin: '0 auto 10px' }}></div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Generating your image... this takes a few seconds.</p>
-            </div>
-            <style>{`
-              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-            `}</style>
+      <div className="genimg-card">
+        {/* Header */}
+        <div className="genimg-card-header">
+          <div className="genimg-card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>Generated Image</span>
           </div>
-        )}
+          <div className="genimg-card-actions">
+            {!loading && (
+              <>
+                <button onClick={() => setIsExpanded(true)} className="mermaid-action-btn" title="Expand">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                </button>
+                <button onClick={handleDownload} className="mermaid-action-btn mermaid-download-btn" title="Download">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  <span>PNG</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
 
-        {error && (
-          <div style={{ padding: '30px', textAlign: 'center', color: '#ef4444', background: '#fee2e2' }}>
-            <p style={{ fontWeight: 600, marginBottom: '8px' }}>⚠️ Image Generation Failed</p>
-            <p style={{ fontSize: '0.875rem' }}>The Hugging Face image server is currently overloaded, the API key is invalid, or it is blocked by your network. Please try again later.</p>
-            <p style={{ fontSize: '0.75rem', marginTop: '12px', color: '#b91c1c' }}>Prompt: {cleanPrompt}</p>
-          </div>
-        )}
-        
-        {!error && (
+        {/* Image canvas */}
+        <div className="genimg-canvas">
+          {loading && (
+            <div className="genimg-loading">
+              <div className="genimg-spinner" />
+              <p>Generating image…</p>
+            </div>
+          )}
           <img 
             src={imageUrl} 
             alt={cleanPrompt} 
+            className="genimg-img"
             onClick={() => !loading && setIsExpanded(true)}
             onLoad={() => setLoading(false)}
             onError={() => { setLoading(false); setError(true); }}
-            style={{ width: '100%', display: loading ? 'none' : 'block', height: 'auto', cursor: loading ? 'default' : 'zoom-in' }}
+            style={{ display: loading ? 'none' : 'block' }}
           />
-        )}
-        
-        {!loading && !error && (
-          <div style={{ padding: '12px 16px', background: 'var(--bg-surface)', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)', fontStyle: 'italic', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              Prompt: {cleanPrompt}
-            </p>
+        </div>
+
+        {/* Footer prompt */}
+        {!loading && (
+          <div className="genimg-footer">
+            <span className="genimg-prompt-label">Prompt:</span> {cleanPrompt.length > 120 ? cleanPrompt.slice(0, 120) + '…' : cleanPrompt}
           </div>
         )}
       </div>
 
+      {/* Fullscreen overlay */}
       {isExpanded && (
-        <div 
-          onClick={() => setIsExpanded(false)}
-          style={{
-            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-            background: 'rgba(15, 15, 15, 0.95)', zIndex: 99999, display: 'flex',
-            flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            cursor: 'zoom-out'
-          }}
-        >
-          {/* Top Toolbar */}
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              position: 'absolute', top: 0, left: 0, right: 0, padding: '16px 24px',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              background: 'linear-gradient(rgba(0,0,0,0.5), transparent)',
-              color: 'white', cursor: 'default'
-            }}
-          >
-            <div style={{ fontSize: '0.875rem', maxWidth: '60%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', opacity: 0.8 }}>
+        <div className="genimg-overlay" onClick={() => setIsExpanded(false)}>
+          <div className="genimg-overlay-toolbar" onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: '0.82rem', maxWidth: '60%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', opacity: 0.8 }}>
               {cleanPrompt}
             </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button 
-                onClick={handleDownload}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px',
-                  background: 'rgba(255, 255, 255, 0.1)', color: '#fff', borderRadius: '8px',
-                  fontSize: '0.875rem', fontWeight: '500', border: '1px solid rgba(255,255,255,0.2)',
-                  cursor: 'pointer', transition: 'all 0.2s', backdropFilter: 'blur(4px)'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-              >
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={handleDownload} className="genimg-overlay-btn">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Download
               </button>
-              <button 
-                onClick={() => setIsExpanded(false)}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', width: '38px', height: '38px',
-                  background: 'rgba(255, 255, 255, 0.1)', color: '#fff', borderRadius: '50%',
-                  border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-              >
-                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+              <button onClick={() => setIsExpanded(false)} className="genimg-overlay-close">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
           </div>
-          
-          {/* Main Image */}
-          <img 
-            src={imageUrl} 
-            alt={cleanPrompt} 
-            style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', borderRadius: '4px' }} 
-            onClick={(e) => e.stopPropagation()}
-          />
+          <img src={imageUrl} alt={cleanPrompt} className="genimg-overlay-img" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </>
