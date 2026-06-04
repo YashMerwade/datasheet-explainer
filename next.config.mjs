@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: [
-    'pdf-parse',
+    'pdfjs-dist',
+    'canvas',
     'mammoth',
     'tesseract.js',
     'firebase-admin',
