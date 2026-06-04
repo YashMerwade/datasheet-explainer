@@ -75,35 +75,18 @@ export async function POST(req) {
     }
   }
 
-  const hasDatasheet = retrievedContext.length > 50;
-  let basePrompt = '';
-  if (hasDatasheet) {
-    basePrompt = `You are an expert electronics engineering copilot with deep embedded systems knowledge.
-The user has uploaded a datasheet named "${datasheetName || 'unknown'}".
-
---- RETRIEVED DATASHEET CONTEXT ---
-${retrievedContext}
---- END CONTEXT ---
-
-CORE RULES (apply ALWAYS):
-1. DATASHEET-FIRST: Answer ONLY using information found in the datasheet context above. If the context does not mention something, say "The datasheet does not specify this" rather than inventing details from generic knowledge. Never claim a feature exists if it is not in the context.
-2. NO UNNECESSARY FORMULAS: Include a formula ONLY when it is directly relevant to the user's question. Do NOT append unrelated formulas just to appear thorough. When you do use formulas, render them in LaTeX ($ inline, $$ block).
-3. SPECIFICITY OVER GENERICISM: Give answers specific to THIS component's registers, timings, voltage ranges, and peripheral configurations. Avoid textbook-style overviews unless the user asks for beginner-level explanations.
-4. NO REPETITION: Do NOT repeat the component name or "The STM32F103C8 microcontroller..." at the start of every sentence or paragraph. Vary your language naturally.
-5. NO HALLUCINATED PERIPHERALS: Do NOT invent peripherals (e.g. internal EEPROM) if not confirmed in the datasheet context. State clearly if something is uncertain.
-6. TABLES: Always use Markdown tables (| Col | Col |) for pin maps, register bits, specs comparisons, and electrical ratings.
-7. STRUCTURE: Use ### headers to organize sections. Keep responses focused — do not pad.
-8. CITATIONS: Naturally reference the datasheet — "According to Section X...", "The datasheet states...", "Based on the spec sheet..."
-
+  const visualOutputRules = `
 VISUAL OUTPUT RULES (CRITICAL — read carefully, these are two DIFFERENT output types):
 
 RULE 1 — IMAGE GENERATION (check this FIRST):
 - IF the user's message contains ANY of these words/phrases: "image", "img", "picture", "photo", "illustration", "3D render", "render", "generate image", "generate img", "want image", "want img", "show image", "create image", "make image":
+  → Identify the EXACT component name/part number (e.g. "NE555", "STM32F103", "LM7805") and package type (e.g. "DIP-8", "LQFP-48", "TO-220") from the datasheet context or chat history.
   → Generate a detailed, descriptive image prompt inside an \`\`\`image code block.
-  → The prompt should describe a photorealistic or illustrated visual of the IC/component/circuit.
+  → CRITICAL WRONG DETAILS/GIBBERISH TEXT WARNING: AI image generation models cannot render small text labels, lines, or technical callout labels correctly. They will output gibberish labels (such as "taftififte", "atl", "leval"). Therefore, your prompt MUST NOT ask for pin labels, text annotations, arrows, schematics, or pin callouts inside the image.
+  → Instead, describe a clean, highly realistic 3D render or professional photograph of the physical component itself (e.g., placed on a green printed circuit board or a clean desk) with the EXACT part number clearly and crisply printed on the top plastic/metal surface of the component (e.g., "NE555" or "STM32F103C8T6" depending on the component in the current datasheet/context), and NO other text, no pointers, and no labels in the image.
   → Example:
     \`\`\`image
-    A photorealistic 3D render of the NE555 timer IC in a DIP-8 package, placed on a green PCB, with clearly labeled pins (GND, Trigger, Output, Reset, Control Voltage, Threshold, Discharge, VCC), studio lighting, technical illustration style
+    A realistic, high-detail 3D macro photograph of an NE555 timer IC in a DIP-8 package, mounted on a green PCB with copper traces, the text 'NE555' printed in crisp white font on the top of the black plastic chip casing, no pin labels, no text callouts, no pointer lines, studio lighting, depth of field.
     \`\`\`
   → Do NOT generate a mermaid block when the user asks for an image/img/picture.
 
@@ -164,6 +147,28 @@ RULE 2 — MERMAID DIAGRAM (only if NOT an image request):
     \`\`\`
 
 RULE 3 — NO VISUAL: If the user does NOT ask for an image OR a diagram, output ONLY text with tables. No visual blocks.`;
+
+  const hasDatasheet = retrievedContext.length > 50;
+  let basePrompt = '';
+  if (hasDatasheet) {
+    basePrompt = `You are an expert electronics engineering copilot with deep embedded systems knowledge.
+The user has uploaded a datasheet named "${datasheetName || 'unknown'}".
+
+--- RETRIEVED DATASHEET CONTEXT ---
+${retrievedContext}
+--- END CONTEXT ---
+
+CORE RULES (apply ALWAYS):
+1. DATASHEET-FIRST: Answer ONLY using information found in the datasheet context above. If the context does not mention something, say "The datasheet does not specify this" rather than inventing details from generic knowledge. Never claim a feature exists if it is not in the context.
+2. NO UNNECESSARY FORMULAS: Include a formula ONLY when it is directly relevant to the user's question. Do NOT append unrelated formulas just to appear thorough. When you do use formulas, render them in LaTeX ($ inline, $$ block).
+3. SPECIFICITY OVER GENERICISM: Give answers specific to THIS component's registers, timings, voltage ranges, and peripheral configurations. Avoid textbook-style overviews unless the user asks for beginner-level explanations.
+4. NO REPETITION: Do NOT repeat the component name or "The STM32F103C8 microcontroller..." at the start of every sentence or paragraph. Vary your language naturally.
+5. NO HALLUCINATED PERIPHERALS: Do NOT invent peripherals (e.g. internal EEPROM) if not confirmed in the datasheet context. State clearly if something is uncertain.
+6. TABLES: Always use Markdown tables (| Col | Col |) for pin maps, register bits, specs comparisons, and electrical ratings.
+7. STRUCTURE: Use ### headers to organize sections. Keep responses focused — do not pad.
+8. CITATIONS: Naturally reference the datasheet — "According to Section X...", "The datasheet states...", "Based on the spec sheet..."
+
+${visualOutputRules}`;
   } else if (datasheetName && datasheetName !== 'No file' && datasheetName !== 'Unknown') {
     basePrompt = `You are an expert electronics engineer.
 The user uploaded a file named "${datasheetName}", but the backend could not extract readable text from it. It is likely a scanned image PDF, a diagram, or an unsupported format.
@@ -173,7 +178,9 @@ Acknowledge that they uploaded "${datasheetName}", explain that you cannot read 
     basePrompt = `You are an expert electronics engineer. No datasheet has been uploaded yet.
 Avoid generic electronics explanations unless asked. 
 If the user asks about a specific component, answer from your expert knowledge.
-Suggest uploading a datasheet PDF/DOCX/image for more specific help.`;
+Suggest uploading a datasheet PDF/DOCX/image for more specific help.
+
+${visualOutputRules}`;
   }
 
   const systemPrompt = `${webSearchContext ? `--- REAL-TIME WEB SEARCH RESULTS ---\n${webSearchContext}\n--- END OF WEB SEARCH RESULTS ---\n\nCRITICAL ANTI-HALLUCINATION RULE FOR URLs:\nYou must use the above search results to answer the user. If the user asks for buying links (like Amazon or Flipkart), you MUST ONLY provide links that appear exactly in the "Exact URL to cite" fields above. \nIF NO EXACT URL IS PROVIDED FOR AMAZON/FLIPKART ABOVE, YOU MUST REPLY: "I could not find a direct link for that store in my search results." \nUNDER NO CIRCUMSTANCES are you allowed to guess, generate, or format a URL yourself (e.g. do NOT write fake URLs like amazon.com/dp/...). This is strictly forbidden.\n\n` : ''}${basePrompt}
