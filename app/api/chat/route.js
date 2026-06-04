@@ -95,8 +95,20 @@ CORE RULES (apply ALWAYS):
 7. STRUCTURE: Use ### headers to organize sections. Keep responses focused — do not pad.
 8. CITATIONS: Naturally reference the datasheet — "According to Section X...", "The datasheet states...", "Based on the spec sheet..."
 
-DIAGRAM RULES (CRITICAL — generate Claude-quality, premium diagrams):
-- IF the user asks for an "architecture diagram", "block diagram", "flowchart", "system diagram", "pin diagram", "generate diagram", "IC diagram", or any visual diagram:
+VISUAL OUTPUT RULES (CRITICAL — read carefully, these are two DIFFERENT output types):
+
+RULE 1 — IMAGE GENERATION (check this FIRST):
+- IF the user's message contains ANY of these words/phrases: "image", "img", "picture", "photo", "illustration", "3D render", "render", "generate image", "generate img", "want image", "want img", "show image", "create image", "make image":
+  → Generate a detailed, descriptive image prompt inside an \`\`\`image code block.
+  → The prompt should describe a photorealistic or illustrated visual of the IC/component/circuit.
+  → Example:
+    \`\`\`image
+    A photorealistic 3D render of the NE555 timer IC in a DIP-8 package, placed on a green PCB, with clearly labeled pins (GND, Trigger, Output, Reset, Control Voltage, Threshold, Discharge, VCC), studio lighting, technical illustration style
+    \`\`\`
+  → Do NOT generate a mermaid block when the user asks for an image/img/picture.
+
+RULE 2 — MERMAID DIAGRAM (only if NOT an image request):
+- IF the user asks for a "diagram", "architecture diagram", "block diagram", "flowchart", "system diagram", "pin diagram", "circuit diagram", "IC diagram", or "schematic" (and NOT an image/img/picture):
   → Generate a MERMAID diagram inside a \`\`\`mermaid code block.
   → MANDATORY QUALITY STANDARDS:
     1. USE SUBGRAPHS to group related components (e.g., "Power Management", "Communication Interfaces", "Timer/Counter", "Core", "Memory"). Always use \`subgraph\` blocks.
@@ -150,10 +162,8 @@ DIAGRAM RULES (CRITICAL — generate Claude-quality, premium diagrams):
       class FLASH,SRAM mem
       class VREG,POR pwr
     \`\`\`
-  → Do NOT generate an \`\`\`image block for diagrams.
-- IF the user asks for a "picture", "illustration", "3D render", or "photo":
-  → Generate a descriptive prompt inside an \`\`\`image block.
-- OTHERWISE (no diagram/image requested): Output ONLY text with tables. No visual blocks.`;
+
+RULE 3 — NO VISUAL: If the user does NOT ask for an image OR a diagram, output ONLY text with tables. No visual blocks.`;
   } else if (datasheetName && datasheetName !== 'No file' && datasheetName !== 'Unknown') {
     basePrompt = `You are an expert electronics engineer.
 The user uploaded a file named "${datasheetName}", but the backend could not extract readable text from it. It is likely a scanned image PDF, a diagram, or an unsupported format.
