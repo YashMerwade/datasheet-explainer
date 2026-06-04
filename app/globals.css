@@ -686,3 +686,240 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg-main);
   }
 }
 
+/* ═══════════════════════════════════════════
+   Mermaid Diagram Card — Premium Styling
+═══════════════════════════════════════════ */
+
+.mermaid-card {
+  position: relative;
+  margin: 16px 0;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+.mermaid-card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* Card header toolbar */
+.mermaid-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-main);
+  backdrop-filter: blur(12px);
+}
+.mermaid-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.mermaid-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mermaid-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.mermaid-action-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.mermaid-download-btn {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  padding: 5px 10px;
+}
+.mermaid-download-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Diagram canvas */
+.mermaid-canvas-wrap {
+  padding: 24px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--bg-surface);
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mermaid-canvas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 120px;
+}
+.mermaid-canvas svg {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+/* ── Mermaid SVG Premium Overrides ── */
+.mermaid-canvas .node rect,
+.mermaid-canvas .node circle,
+.mermaid-canvas .node ellipse,
+.mermaid-canvas .node polygon {
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.08));
+  stroke-width: 1.5px;
+  rx: 8;
+  ry: 8;
+}
+.mermaid-canvas .node .label {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 500;
+}
+.mermaid-canvas .edgeLabel {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+}
+.mermaid-canvas .edgePath .path {
+  stroke-width: 1.8px;
+}
+.mermaid-canvas .cluster rect {
+  rx: 10 !important;
+  ry: 10 !important;
+  stroke-dasharray: 6 4;
+  stroke-width: 1.5px;
+}
+.mermaid-canvas .cluster .nodeLabel {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ── Fullscreen Mode ── */
+.mermaid-card.mermaid-fullscreen {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10000;
+  border-radius: 16px;
+  box-shadow: 0 25px 80px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+}
+.mermaid-card.mermaid-fullscreen .mermaid-canvas-wrap {
+  flex: 1;
+  padding: 32px;
+  overflow: auto;
+}
+.mermaid-card.mermaid-fullscreen .mermaid-canvas svg {
+  max-width: none;
+  width: auto;
+  height: auto;
+  max-height: 100%;
+}
+.mermaid-fullscreen-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  animation: fadeIn 0.2s ease;
+}
+
+/* ── Error Card ── */
+.mermaid-error-card {
+  margin: 16px 0;
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+}
+.mermaid-error-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #ef4444;
+}
+.mermaid-error-code {
+  margin-top: 8px;
+  padding: 12px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 6px;
+  font-size: 0.72rem;
+  overflow-x: auto;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ── Dark mode refinements ── */
+.app-shell.dark .mermaid-card {
+  border-color: rgba(255,255,255,0.06);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3), 0 1px 4px rgba(0,0,0,0.2);
+}
+.app-shell.dark .mermaid-card:hover {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+.app-shell.dark .mermaid-card-header {
+  background: rgba(30,30,30,0.8);
+  border-bottom-color: rgba(255,255,255,0.06);
+}
+.app-shell.dark .mermaid-canvas-wrap {
+  background: #1a1b2e;
+}
+.app-shell.dark .mermaid-download-btn:hover {
+  background: var(--accent);
+}
+.app-shell.dark .mermaid-error-card {
+  background: rgba(239, 68, 68, 0.1);
+}
+.app-shell.dark .mermaid-error-code {
+  background: rgba(255,255,255,0.05);
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Mobile adjustments for mermaid ── */
+@media (max-width: 768px) {
+  .mermaid-canvas-wrap {
+    padding: 16px 8px;
+  }
+  .mermaid-card-header {
+    padding: 8px 12px;
+  }
+  .mermaid-card.mermaid-fullscreen {
+    top: 8px; left: 8px; right: 8px; bottom: 8px;
+    border-radius: 12px;
+  }
+}

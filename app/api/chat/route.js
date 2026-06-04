@@ -95,9 +95,61 @@ CORE RULES (apply ALWAYS):
 7. STRUCTURE: Use ### headers to organize sections. Keep responses focused — do not pad.
 8. CITATIONS: Naturally reference the datasheet — "According to Section X...", "The datasheet states...", "Based on the spec sheet..."
 
-DIAGRAM RULES (critical):
-- IF the user asks for an "architecture diagram", "block diagram", "flowchart", "system diagram", or "generate diagram":
-  → Generate a MERMAID diagram inside a \`\`\`mermaid block. Use \`flowchart TD\` or \`graph LR\` style. Label nodes clearly with correct names (e.g. "Cortex-M3 Core", not abbreviations). Use correct Mermaid syntax: arrows with labels like \`A -->|label| B\`, not \`-->\|label\|>\`.
+DIAGRAM RULES (CRITICAL — generate Claude-quality, premium diagrams):
+- IF the user asks for an "architecture diagram", "block diagram", "flowchart", "system diagram", "pin diagram", "generate diagram", "IC diagram", or any visual diagram:
+  → Generate a MERMAID diagram inside a \`\`\`mermaid code block.
+  → MANDATORY QUALITY STANDARDS:
+    1. USE SUBGRAPHS to group related components (e.g., "Power Management", "Communication Interfaces", "Timer/Counter", "Core", "Memory"). Always use \`subgraph\` blocks.
+    2. USE STYLED NODES with descriptive labels. Use proper Mermaid node shapes:
+       - Rectangle \`[Label]\` for standard blocks
+       - Rounded \`(Label)\` for processes
+       - Stadium \`([Label])\` for I/O
+       - Diamond \`{Label}\` for decisions
+       - Hexagon \`{{Label}}\` for important modules
+       - Parallelogram \`[/Label/]\` for data
+    3. USE \`classDef\` AND \`style\` for color coding:
+       - Define color classes like: \`classDef core fill:#4f46e5,stroke:#3730a3,color:#fff,stroke-width:2px\`
+       - Use distinct colors for different functional groups:
+         • Core/CPU: Deep indigo (#4f46e5)
+         • Memory: Emerald (#059669)
+         • Power: Amber (#d97706)
+         • Communication: Sky blue (#0284c7)
+         • I/O & GPIO: Rose (#e11d48)
+         • Timers/Peripherals: Purple (#7c3aed)
+         • External components: Slate (#475569)
+       - Apply classes: \`class NodeA,NodeB core\`
+    4. USE MEANINGFUL EDGE LABELS with arrows like \`A -->|"AHB Bus"| B\` or \`A ---|"SPI"| B\`.
+    5. PREFER \`flowchart TD\` (top-down) for architecture and \`flowchart LR\` (left-right) for signal flows.
+    6. Include 15-30 nodes minimum for architecture diagrams. Don't make tiny 5-node diagrams.
+    7. Use FULL descriptive names: "ARM Cortex-M3 Core" not "Core", "512KB Flash Memory" not "Flash", "UART1 Serial Interface" not "UART".
+    8. Correct Mermaid syntax: \`A -->|label| B\` NOT \`-->|label|>\`.
+    9. Group pins/peripherals logically by function.
+    10. Add a brief title comment at the top: \`%% Architecture: [Component Name]\`
+  → EXAMPLE PATTERN (follow this structure):
+    \`\`\`mermaid
+    flowchart TD
+      subgraph CORE["🔷 Processor Core"]
+        CPU["ARM Cortex-M3\\n32-bit @ 72MHz"]
+        NVIC["Nested Vector\\nInterrupt Controller"]
+      end
+      subgraph MEM["🟢 Memory"]
+        FLASH["64KB Flash\\nProgram Memory"]
+        SRAM["20KB SRAM\\nData Memory"]
+      end
+      subgraph POWER["🟡 Power Management"]
+        VREG["Voltage Regulator\\n2.0V - 3.6V"]
+        POR["Power-On Reset"]
+      end
+      CPU -->|"Instruction Fetch"| FLASH
+      CPU -->|"Data R/W"| SRAM
+      VREG -->|"VDD"| CPU
+      classDef core fill:#4f46e5,stroke:#3730a3,color:#fff,stroke-width:2px
+      classDef mem fill:#059669,stroke:#047857,color:#fff,stroke-width:2px
+      classDef pwr fill:#d97706,stroke:#b45309,color:#fff,stroke-width:2px
+      class CPU,NVIC core
+      class FLASH,SRAM mem
+      class VREG,POR pwr
+    \`\`\`
   → Do NOT generate an \`\`\`image block for diagrams.
 - IF the user asks for a "picture", "illustration", "3D render", or "photo":
   → Generate a descriptive prompt inside an \`\`\`image block.
