@@ -80,8 +80,28 @@ export default function Mermaid({ chart }) {
     const renderChart = async () => {
       let sanitized = chart;
 
+      // 1. Preprocess literal newlines inside double-quotes to avoid splitting nodes across lines
+      let insideQuotes = false;
+      let preprocessed = '';
+      for (let i = 0; i < sanitized.length; i++) {
+        const char = sanitized[i];
+        if (char === '"' && (i === 0 || sanitized[i - 1] !== '\\')) {
+          insideQuotes = !insideQuotes;
+        }
+        if (char === '\n' && insideQuotes) {
+          preprocessed += '\\n';
+        } else {
+          preprocessed += char;
+        }
+      }
+      sanitized = preprocessed;
+
       // ── Sanitize common AI hallucinations ──
       sanitized = sanitized.replace(/-->\s*\|(.*?)\|\s*>/g, '-->|$1|');
+      
+      // Fix spaces inside edge labels like "-->| label |" to "-->|label|" for strict versions
+      sanitized = sanitized.replace(/(-->|==>|-.->|---|==|-.-\s*)\s*\|\s*(.*?)\s*\|/g, '$1|$2|');
+
       sanitized = sanitized.replace(/<html.*?>.*?<div.*?>/is, '');
       sanitized = sanitized.replace(/<\/div>.*?<\/html>/is, '');
       sanitized = sanitized.replace(/<script.*?>.*?<\/script>/is, '');
@@ -96,7 +116,42 @@ export default function Mermaid({ chart }) {
       }
       
       // Process line-by-line to handle complex, nested shape labels safely (greedy matching)
-      const lines = sanitized.split('\n');
+      let lines = sanitized.split('\n');
+
+      // Helper to check if a line has balanced quotes and brackets
+      const isLineComplete = (line) => {
+        const trimmed = line.trim();
+        if (!trimmed) return true;
+        if (trimmed.startsWith('%%') || trimmed === 'end') return true;
+        
+        const quoteCount = (trimmed.match(/(?<!\\)"/g) || []).length;
+        if (quoteCount % 2 !== 0) return false;
+        
+        const openSquare = (trimmed.match(/\[/g) || []).length;
+        const closeSquare = (trimmed.match(/\]/g) || []).length;
+        if (openSquare !== closeSquare) return false;
+        
+        const openParen = (trimmed.match(/\(/g) || []).length;
+        const closeParen = (trimmed.match(/\)/g) || []).length;
+        if (openParen !== closeParen) return false;
+        
+        const openCurly = (trimmed.match(/\{/g) || []).length;
+        const closeCurly = (trimmed.match(/\}/g) || []).length;
+        if (openCurly !== closeCurly) return false;
+        
+        return true;
+      };
+
+      // Discard incomplete trailing lines from the end of the chart if truncated
+      while (lines.length > 0) {
+        const lastLine = lines[lines.length - 1];
+        if (!isLineComplete(lastLine)) {
+          lines.pop();
+        } else {
+          break;
+        }
+      }
+
       const processedLines = lines.map(line => {
         const trimmed = line.trim();
         // Skip comments, subgraphs, blocks, classes, styles
@@ -173,6 +228,22 @@ export default function Mermaid({ chart }) {
 
         return newLine;
       });
+
+      // Count open subgraphs to append missing 'end's
+      let openSubgraphs = 0;
+      processedLines.forEach(line => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('subgraph')) {
+          openSubgraphs++;
+        } else if (trimmed === 'end') {
+          openSubgraphs--;
+        }
+      });
+
+      while (openSubgraphs > 0) {
+        processedLines.push('    end');
+        openSubgraphs--;
+      }
 
       sanitized = processedLines.join('\n').trim();
       setSanitizedStr(sanitized);

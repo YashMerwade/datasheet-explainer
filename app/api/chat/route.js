@@ -192,7 +192,7 @@ EQUATIONS (LATEX): Format mathematical formulas using LaTeX — $ for inline mat
     { role: 'user', content: message },
   ];
 
-  let answer = await chatGroq(systemPrompt, groqHistory, 1500);
+  let answer = await chatGroq(systemPrompt, groqHistory, 3000);
   
   // Forcefully strip out hallucinated Amazon/Flipkart links that aren't in the live search results
   if (useWebSearch && webSearchContext) {
