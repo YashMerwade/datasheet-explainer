@@ -95,48 +95,86 @@ export default function Mermaid({ chart }) {
         sanitized = sanitized.replace(/^[ \t]*note\s+(right|left|top|bottom|over|of|for).*$/gim, '');
       }
       
-      // Fix common parentheses issues in node labels — wrap in quotes
-      sanitized = sanitized.replace(/\[([^\]]*\([^\)]*\)[^\]]*)\]/g, (match, inner) => {
-        return `["${inner}"]`;
+      // Process line-by-line to handle complex, nested shape labels safely (greedy matching)
+      const lines = sanitized.split('\n');
+      const processedLines = lines.map(line => {
+        const trimmed = line.trim();
+        // Skip comments, subgraphs, blocks, classes, styles
+        if (trimmed.startsWith('%%') || trimmed.startsWith('subgraph') || trimmed.startsWith('end') || trimmed.startsWith('classDef') || trimmed.startsWith('style') || trimmed.startsWith('class ') || trimmed.startsWith('click')) {
+          return line;
+        }
+
+        const hasConnection = line.includes('-->') || line.includes('---') || line.includes('==>') || line.includes('-.->') || line.includes('-.-');
+        if (hasConnection) {
+          return line;
+        }
+
+        let newLine = line;
+
+        // 1. Stadium shape: ID([Text])
+        const stadiumRegex = /^([ \t]*)([a-zA-Z0-9_-]+)\(\[\s*(?!"|#)(.*)\s*\]\)[ \t]*$/;
+        if (stadiumRegex.test(newLine)) {
+          return newLine.replace(stadiumRegex, (match, indent, id, inner) => {
+            if (inner.trim().startsWith('"')) return match;
+            const escaped = inner.replace(/"/g, '\\"');
+            return `${indent}${id}(["${escaped}"])`;
+          });
+        }
+
+        // 2. Hexagon shape: ID{{Text}}
+        const hexagonRegex = /^([ \t]*)([a-zA-Z0-9_-]+)\{\{\s*(?!"|#)(.*)\s*\}\}[ \t]*$/;
+        if (hexagonRegex.test(newLine)) {
+          return newLine.replace(hexagonRegex, (match, indent, id, inner) => {
+            if (inner.trim().startsWith('"')) return match;
+            const escaped = inner.replace(/"/g, '\\"');
+            return `${indent}${id}{{"${escaped}"}}`;
+          });
+        }
+
+        // 3. Diamond shape: ID{Text}
+        const diamondRegex = /^([ \t]*)([a-zA-Z0-9_-]+)\{\s*(?!"|#)(.*)\s*\}[ \t]*$/;
+        if (diamondRegex.test(newLine)) {
+          return newLine.replace(diamondRegex, (match, indent, id, inner) => {
+            if (inner.trim().startsWith('"')) return match;
+            const escaped = inner.replace(/"/g, '\\"');
+            return `${indent}${id}{"${escaped}"}`;
+          });
+        }
+
+        // 4. Parallelogram shape: ID[/Text/]
+        const paraRegex = /^([ \t]*)([a-zA-Z0-9_-]+)\[\/\s*(?!"|#)(.*)\s*\/\][ \t]*$/;
+        if (paraRegex.test(newLine)) {
+          return newLine.replace(paraRegex, (match, indent, id, inner) => {
+            if (inner.trim().startsWith('"')) return match;
+            const escaped = inner.replace(/"/g, '\\"');
+            return `${indent}${id}[/"${escaped}"/]`;
+          });
+        }
+
+        // 5. Rectangular shape: ID[Text]
+        const rectRegex = /^([ \t]*)([a-zA-Z0-9_-]+)\[\s*(?!"|#)(.*)\s*\][ \t]*$/;
+        if (rectRegex.test(newLine)) {
+          return newLine.replace(rectRegex, (match, indent, id, inner) => {
+            if (inner.trim().startsWith('"')) return match;
+            const escaped = inner.replace(/"/g, '\\"');
+            return `${indent}${id}["${escaped}"]`;
+          });
+        }
+
+        // 6. Rounded shape: ID(Text)
+        const roundRegex = /^([ \t]*)([a-zA-Z0-9_-]+)\(\s*(?!"|#)(.*)\s*\)[ \t]*$/;
+        if (roundRegex.test(newLine)) {
+          return newLine.replace(roundRegex, (match, indent, id, inner) => {
+            if (inner.trim().startsWith('"')) return match;
+            const escaped = inner.replace(/"/g, '\\"');
+            return `${indent}${id}("${escaped}")`;
+          });
+        }
+
+        return newLine;
       });
 
-      // Wrap bracket contents in double quotes if they contain spaces, newlines, or special characters and are not already quoted
-      // For rectangular brackets [...]
-      sanitized = sanitized.replace(/\[(?!"|#)([^\]]+)\]/g, (match, inner) => {
-        if (inner.trim().startsWith('"') || inner.trim().endsWith('"') || inner.trim().startsWith('#')) return match;
-        const escaped = inner.replace(/"/g, '\\"');
-        return `["${escaped}"]`;
-      });
-
-      // For rounded brackets (...)
-      sanitized = sanitized.replace(/\((?!"|#)([^)]+)\)/g, (match, inner) => {
-        if (inner.startsWith('[') || inner.endsWith(']') || inner.startsWith('(') || inner.endsWith(')') || inner.trim().startsWith('"') || inner.trim().endsWith('"')) return match;
-        const escaped = inner.replace(/"/g, '\\"');
-        return `("${escaped}")`;
-      });
-
-      // For stadium brackets ([...])
-      sanitized = sanitized.replace(/\(\[(?!"|#)([^\]]+)\]\)/g, (match, inner) => {
-        if (inner.trim().startsWith('"') || inner.trim().endsWith('"')) return match;
-        const escaped = inner.replace(/"/g, '\\"');
-        return `(["${escaped}"])`;
-      });
-
-      // For hexagon brackets {{...}}
-      sanitized = sanitized.replace(/\{\{\s*(?!"|#)([^\}]+)\}\}/g, (match, inner) => {
-        if (inner.trim().startsWith('"') || inner.trim().endsWith('"')) return match;
-        const escaped = inner.replace(/"/g, '\\"');
-        return `{{"${escaped}"}}`;
-      });
-
-      // For rhombus/diamond brackets {...}
-      sanitized = sanitized.replace(/\{\s*(?!"|#)([^\}]+)\}/g, (match, inner) => {
-        if (inner.startsWith('{') || inner.endsWith('}') || inner.trim().startsWith('"') || inner.trim().endsWith('"')) return match;
-        const escaped = inner.replace(/"/g, '\\"');
-        return `{"${escaped}"}`;
-      });
-
-      sanitized = sanitized.trim();
+      sanitized = processedLines.join('\n').trim();
       setSanitizedStr(sanitized);
 
       try {
