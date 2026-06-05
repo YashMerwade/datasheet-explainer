@@ -24,6 +24,6 @@ export async function POST(req) {
     });
   } catch (err) {
     console.error('Upload extraction error:', err);
-    return Response.json({ error: 'Failed to extract text from file.', text: '' }, { status: 500 });
+    return Response.json({ error: `Failed to extract text: ${err.message}`, text: '' }, { status: 500 });
   }
 }

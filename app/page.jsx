@@ -74,18 +74,58 @@ export default function Home() {
 
     const fd = new FormData();
     fd.append('file', file);
-    fd.append('mode', 'summary');
 
     try {
-      const r = await fetch('/api/explain', { method: 'POST', body: fd });
-      const data = await r.json();
-      if (!r.ok || data.error) {
-        setUploadedFile({ file, name: file.name, text: '', uploading: false, error: data.error || 'Failed to extract text.' });
-      } else {
-        setUploadedFile({ file, name: file.name, text: data.text || data.result || '', uploading: false, error: null });
+      // Step 1: Upload and extract raw text (Fast)
+      const uploadResponse = await fetch('/api/upload', { method: 'POST', body: fd });
+      const uploadData = await uploadResponse.json();
+      
+      if (!uploadResponse.ok || uploadData.error) {
+        setUploadedFile({ 
+          file, 
+          name: file.name, 
+          text: '', 
+          uploading: false, 
+          error: uploadData.error || 'Failed to extract text from file.' 
+        });
+        return;
       }
-    } catch {
-      setUploadedFile({ file, name: file.name, text: '', uploading: false, error: 'Network error uploading file.' });
+
+      const extractedText = uploadData.text || '';
+
+      // Step 2: Request explanation/summary using the extracted text (Avoids Vercel timeouts)
+      const explainResponse = await fetch('/api/explain', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: extractedText, mode: 'summary' }) 
+      });
+      const explainData = await explainResponse.json();
+
+      if (!explainResponse.ok || explainData.error) {
+        setUploadedFile({ 
+          file, 
+          name: file.name, 
+          text: extractedText, // Save the text anyway so the user can still chat!
+          uploading: false, 
+          error: explainData.error || 'Failed to generate initial summary.' 
+        });
+      } else {
+        setUploadedFile({ 
+          file, 
+          name: file.name, 
+          text: extractedText, 
+          uploading: false, 
+          error: null 
+        });
+      }
+    } catch (err) {
+      setUploadedFile({ 
+        file, 
+        name: file.name, 
+        text: '', 
+        uploading: false, 
+        error: 'Network error uploading file.' 
+      });
     }
   };
 

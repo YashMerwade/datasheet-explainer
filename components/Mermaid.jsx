@@ -100,6 +100,42 @@ export default function Mermaid({ chart }) {
         return `["${inner}"]`;
       });
 
+      // Wrap bracket contents in double quotes if they contain spaces, newlines, or special characters and are not already quoted
+      // For rectangular brackets [...]
+      sanitized = sanitized.replace(/\[(?!"|#)([^\]]+)\]/g, (match, inner) => {
+        if (inner.trim().startsWith('"') || inner.trim().endsWith('"') || inner.trim().startsWith('#')) return match;
+        const escaped = inner.replace(/"/g, '\\"');
+        return `["${escaped}"]`;
+      });
+
+      // For rounded brackets (...)
+      sanitized = sanitized.replace(/\((?!"|#)([^)]+)\)/g, (match, inner) => {
+        if (inner.startsWith('[') || inner.endsWith(']') || inner.startsWith('(') || inner.endsWith(')') || inner.trim().startsWith('"') || inner.trim().endsWith('"')) return match;
+        const escaped = inner.replace(/"/g, '\\"');
+        return `("${escaped}")`;
+      });
+
+      // For stadium brackets ([...])
+      sanitized = sanitized.replace(/\(\[(?!"|#)([^\]]+)\]\)/g, (match, inner) => {
+        if (inner.trim().startsWith('"') || inner.trim().endsWith('"')) return match;
+        const escaped = inner.replace(/"/g, '\\"');
+        return `(["${escaped}"])`;
+      });
+
+      // For hexagon brackets {{...}}
+      sanitized = sanitized.replace(/\{\{\s*(?!"|#)([^\}]+)\}\}/g, (match, inner) => {
+        if (inner.trim().startsWith('"') || inner.trim().endsWith('"')) return match;
+        const escaped = inner.replace(/"/g, '\\"');
+        return `{{"${escaped}"}}`;
+      });
+
+      // For rhombus/diamond brackets {...}
+      sanitized = sanitized.replace(/\{\s*(?!"|#)([^\}]+)\}/g, (match, inner) => {
+        if (inner.startsWith('{') || inner.endsWith('}') || inner.trim().startsWith('"') || inner.trim().endsWith('"')) return match;
+        const escaped = inner.replace(/"/g, '\\"');
+        return `{"${escaped}"}`;
+      });
+
       sanitized = sanitized.trim();
       setSanitizedStr(sanitized);
 
@@ -107,15 +143,19 @@ export default function Mermaid({ chart }) {
         const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
         const { svg } = await mermaid.render(id, sanitized);
         
-        // Post-process SVG for premium look
-        let enhancedSvg = svg;
-        // Add subtle drop shadow to nodes
-        if (!enhancedSvg.includes('<defs>')) {
-          enhancedSvg = enhancedSvg.replace('<svg', '<svg><defs></defs>').replace('</svg>', '</svg>');
+        // Intercept silent syntax error SVGs rendered by Mermaid instead of throwing exceptions
+        if (svg.includes('Syntax error in text') || svg.includes('mermaid-error-svg') || svg.includes('error-icon')) {
+          setError(true);
+        } else {
+          // Post-process SVG for premium look
+          let enhancedSvg = svg;
+          // Add subtle drop shadow to nodes
+          if (!enhancedSvg.includes('<defs>')) {
+            enhancedSvg = enhancedSvg.replace('<svg', '<svg><defs></defs>').replace('</svg>', '</svg>');
+          }
+          setSvgCode(enhancedSvg);
+          setError(false);
         }
-        
-        setSvgCode(enhancedSvg);
-        setError(false);
       } catch (err) {
         console.error("Mermaid render error:", err);
         setError(true);

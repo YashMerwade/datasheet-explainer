@@ -6,18 +6,36 @@ export async function POST(req) {
   const session = await getServerSession();
   if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const formData = await req.formData();
-  const file = formData.get('file') || formData.get('pdf');
-  const mode = formData.get('mode') || 'explain';
-
-  if (!file) return Response.json({ error: 'No file uploaded' }, { status: 400 });
-
   let text = '';
-  try {
-    text = await extractText(file, file.name);
-  } catch (err) {
-    console.error('Text extraction error:', err);
-    return Response.json({ error: 'Failed to extract text from file.' }, { status: 500 });
+  let mode = 'explain';
+
+  const contentType = req.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    try {
+      const body = await req.json();
+      text = body.text || '';
+      mode = body.mode || 'explain';
+    } catch (err) {
+      console.error('Error parsing JSON body:', err);
+    }
+  } else {
+    try {
+      const formData = await req.formData();
+      const file = formData.get('file') || formData.get('pdf');
+      mode = formData.get('mode') || 'explain';
+      text = formData.get('text') || '';
+
+      if (!text && file) {
+        text = await extractText(file, file.name);
+      }
+    } catch (err) {
+      console.error('Text extraction/form-data error:', err);
+      return Response.json({ error: `Failed to process upload: ${err.message}` }, { status: 500 });
+    }
+  }
+
+  if (!text) {
+    return Response.json({ error: 'No text or file provided for analysis.' }, { status: 400 });
   }
 
   const snippet = text.slice(0, 6000);
